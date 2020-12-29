@@ -18,14 +18,14 @@ jobs:
           - php: '7.2'
           - php: '7.3'
           - php: '7.4'
-          - php: '8.0'
-          - php: '8.1'
 
     name: PHP ${{ matrix.php }}
     steps:
       - uses: actions/checkout@v2
       - name: Install dependencies
         uses: php-actions/composer@v5
+        with:
+          php_version: ${{ matrix.php }}
       - name: PHPUnit tests
         uses: php-actions/phpunit@v2
         with:
