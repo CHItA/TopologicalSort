@@ -1,0 +1,35 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  mysql-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - php: '7.1'
+          - php: '7.2'
+          - php: '7.3'
+          - php: '7.4'
+          - php: '8.0'
+          - php: '8.1'
+
+    name: PHP ${{ matrix.php }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        uses: php-actions/composer@v5
+      - name: PHPUnit tests
+        uses: php-actions/phpunit@v2
+        with:
+          version: 7.5.20
+          php_version: ${{ matrix.php }}
+          configuration: phpunit.dist.xml
+          memory_limit: 256M
