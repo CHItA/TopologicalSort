@@ -19,11 +19,9 @@ jobs:
         run: |
           curl -OL https://squizlabs.github.io/PHP_CodeSniffer/phpcs.phar
           php phpcs.phar --version
-      - uses: tinovyatkin/action-php-codesniffer@v1
-        with:
-          files: "**.php"
-          phpcs_path: php phpcs.phar
-          standard: PSR2
+      - name: Check coding style
+        run: |
+          php phpcs.phar --standard=PSR2 -p src tests
 
   unit-tests:
     runs-on: ubuntu-latest
