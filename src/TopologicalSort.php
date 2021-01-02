@@ -171,7 +171,7 @@ function KahnsAlgorithm(
     $i = 0;
     while (!empty($vertices_without_incoming_edges)) {
         $current = array_pop($vertices_without_incoming_edges);
-        $action($current);
+        call_user_func($action, $current);
         $sorted[$i++] = $current;
 
         foreach ($outgoingEdges[$current] as $vertex) {
