@@ -9,7 +9,23 @@ on:
       - master
 
 jobs:
-  mysql-tests:
+  phpcs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Install PHP_CodeSniffer
+        run: |
+          curl -OL https://squizlabs.github.io/PHP_CodeSniffer/phpcs.phar
+          php phpcs.phar --version
+      - uses: tinovyatkin/action-php-codesniffer@v1
+        with:
+          files: "src/**.php"
+          phpcs_path: php phpcs.phar
+          standard: PSR2
+
+  unit-tests:
     runs-on: ubuntu-latest
     strategy:
       matrix:

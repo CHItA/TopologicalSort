@@ -23,156 +23,174 @@
 
 namespace CHItA\TopologicalSort;
 
-use Closure;
 use InvalidArgumentException;
+use Iterator;
+use IteratorAggregate;
 use LogicException;
+use SplFixedArray;
 
 /**
  * Topological sort implementation.
  *
  * The function uses Kahn's algorithm to perform a topological sort. The
- * function returns the topologically sorted array of the nodes provided. It is
+ * function returns the topologically sorted array of the provided nodes. It is
  * also possible to perform an action on the sorted elements via a callback
- * provided in the action parameter.
+ * function by providing it in the action parameter.
  *
- * By providing a Closure in the $filter parameter you can filter out nodes in
- * your set.
+ * By providing a `callable` in the $filter parameter you can filter out nodes
+ * in your set.
  *
  * Further more, it is possible to provide the edges of the graph in two ways:
- *   a) By providing an array of edges, containing the outgoing from each node
- *   b) Providing a callback method which returns the list of the outgoing
- *      edges from any node.
+ *   a) By providing an array of edges, containing the each vertex the nth
+ *      vertex is connected to.
+ *   b) Providing a callback function which returns the list of the vertices.
  *
  * You also have the option to define the directed edges of the graph in a
  * reversed order (specifying the incoming coming edges rather than the
  * outgoing ones).
  *
- * @param iterable      $nodes      An array of nodes to sort.
- * @param array|Closure $edges      An array or closure specifying the edges of
- *                                  the graph.
- * @param bool          $flip_edges Whether or not to flip the the directions
- *                                  of the edges in the graph.
- * @param Closure|null  $action     A Closure to be called, once the node is
- *                                  sorted, or null to return the sorted list.
- * @param Closure|null  $filter     A filter function to skip items in the
- *                                  `$nodes` collection.
+ * @param iterable          $nodes      A collection of vertices to sort.
+ * @param iterable|callable $edges      A collection or callable specifying the
+ *                                      edges of the graph.
+ * @param bool              $flipEdges  Whether or not to flip the direction of
+ *                                      the edges in the graph.
+ * @param callable|null     $action     A callback to be called, once the node
+ *                                      is sorted, or null to return the sorted
+ *                                      list.
+ * @param callable|null     $filter     A filter function to skip items in the
+ *                                      `$nodes` and `$edges` collections.
  *
  * @return array The topologically sorted `$nodes`.
+ *
+ * @throws LogicException           When the graph is not acyclic.
+ * @throws InvalidArgumentException When `$edges` are nor iterable, nor callable.
+ * @throws \Exception               When no Iterator can be extracted from
+ *                                  `$edges` and it is not an array or callable.
  */
 function topologicalSort(
     iterable $nodes,
     $edges,
-    bool $flip_edges = false,
-    ?Closure $action = null,
-    ?Closure $filter = null) : array
-{
-    if (!is_array($edges) && !($edges instanceof Closure))
-    {
+    bool $flipEdges = false,
+    ?callable $action = null,
+    ?callable $filter = null
+) : array {
+    if (!is_iterable($edges) && !is_callable($edges)) {
         throw new InvalidArgumentException(
-            'TopologicalSort(): $edges is neither iterable nor a Closure.'
+            'TopologicalSort(): $edges is neither iterable nor callable.'
         );
     }
 
-    if (!($filter instanceof Closure))
-    {
-        $filter = function($arg) {
+    if (is_array($edges)) {
+        $edgeIterator = function ($vertex) use (&$edges) {
+            $val = current($edges);
+            next($edges);
+            return $val;
+        };
+    } elseif (is_callable($edges)) {
+        $edgeIterator = function ($vertex) use (&$edges) {
+            return call_user_func($edges, $vertex);
+        };
+    } else {
+        if (!($edges instanceof IteratorAggregate)
+            && !($edges instanceof Iterator)) {
+            throw new InvalidArgumentException(
+                'topologicalSort(): $edges neither an array, callable or Iterator.'
+            );
+        }
+
+        while (!($edges instanceof Iterator)) {
+            $edges = $edges->getIterator();
+        }
+
+        $edgeIterator = function ($vertex) use (&$edges) {
+            $val = $edges->current();
+            $edges->next();
+            return $val;
+        };
+    }
+
+    if ($filter === null) {
+        $filter = function ($vertex) {
             return false;
         };
     }
 
-    if (!($action instanceof Closure))
-    {
-        $action = function($arg) {};
-    }
-
-    $outgoing_storage = [];
-    $incoming_storage = [];
-
-    $edges_iterable =& $edges;
-    $callback = function ($current, $item) use (&$incoming_storage, &$outgoing_storage) {
-        $outgoing_storage[$current] = $item;
-        if (!array_key_exists($current, $incoming_storage))
-        {
-            $incoming_storage[$current] = [];
-        }
-
-        foreach ($item as $node)
-        {
-            $incoming_storage[$node][] = $current;
-        }
-    };
-
-    if ($edges instanceof Closure)
-    {
-        $edges_iterable =& $nodes;
-        $callback = function ($current, $item) use (&$incoming_storage, &$outgoing_storage, &$edges) {
-            $dependencies = $edges($item);
-            $outgoing_storage[$current] = $dependencies;
-            if (!array_key_exists($current, $incoming_storage))
-            {
-                $incoming_storage[$current] = [];
-            }
-
-            foreach ($dependencies as $node)
-            {
-                $incoming_storage[$node][] = $current;
-            }
-        };
-    }
-
-    $item_count = 0;
-    foreach ($nodes as $node)
-    {
-        if ($filter($node))
-        {
+    $incoming_edges = [];
+    $outgoing_edges = [];
+    foreach ($nodes as $vertex) {
+        $edgeSet = $edgeIterator($vertex);
+        if (call_user_func($filter, $vertex)) {
             continue;
         }
 
-        $callback($node, current($edges_iterable));
-        next($edges_iterable);
-        ++$item_count;
-    }
+        $outgoing_edges[$vertex] = $edgeSet;
+        if (!array_key_exists($vertex, $incoming_edges)) {
+            $incoming_edges[$vertex] = [];
+        }
 
-    $incoming_edges =& $incoming_storage;
-    $outgoing_edges =& $outgoing_storage;
-
-    if ($flip_edges)
-    {
-        $incoming_edges =& $outgoing_storage;
-        $outgoing_edges =& $incoming_storage;
-    }
-
-    $independent_nodes = [];
-    foreach ($incoming_edges as $node => $list)
-    {
-        if (empty($list))
-        {
-            $independent_nodes[] = $node;
+        foreach ($edgeSet as $neighbour) {
+            $incoming_edges[$neighbour][] = $vertex;
         }
     }
 
-    $sorted = [];
-    while (!empty($independent_nodes))
-    {
-        $current = array_pop($independent_nodes);
+    return KahnsAlgorithm(
+        ($flipEdges) ? $outgoing_edges : $incoming_edges,
+        ($flipEdges) ? $incoming_edges : $outgoing_edges,
+        $action
+    );
+}
+
+/**
+ * @param array $incomingEdges
+ * @param array $outgoingEdges
+ * @param callable|null $action
+ *
+ * @return array The topologically sorted vertices.
+ */
+function KahnsAlgorithm(
+    array $incomingEdges,
+    array $outgoingEdges,
+    ?callable $action = null
+) : array {
+    if ($action === null) {
+        $action = function ($node) {
+        };
+    }
+
+    $sorted = new SplFixedArray(count($outgoingEdges));
+    $vertices_without_incoming_edges = [];
+    array_walk(
+        $incomingEdges,
+        function ($value, $index) use (&$vertices_without_incoming_edges) {
+            if (empty($value)) {
+                $vertices_without_incoming_edges[] = $index;
+            }
+        }
+    );
+
+    $i = 0;
+    while (!empty($vertices_without_incoming_edges)) {
+        $current = array_pop($vertices_without_incoming_edges);
         $action($current);
-        $sorted[] = $current;
-        foreach ($outgoing_edges[$current] as $node)
-        {
-            $incoming_edges[$node] = array_diff($incoming_edges[$node], [$current]);
-            if (empty($incoming_edges[$node]))
-            {
-                $independent_nodes[] = $node;
+        $sorted[$i++] = $current;
+
+        foreach ($outgoingEdges[$current] as $vertex) {
+            $incomingEdges[$vertex] = array_diff(
+                $incomingEdges[$vertex],
+                [$current]
+            );
+
+            if (empty($incomingEdges[$vertex])) {
+                $vertices_without_incoming_edges[] = $vertex;
             }
         }
     }
 
-    if ($item_count !== count($sorted))
-    {
+    if ($sorted->getSize() !== $i) {
         throw new LogicException(
-            'TopologicalSort(): Circular dependency detected.'
+            'KahnsAlgorithm(): The graph contains cycles.'
         );
     }
 
-    return $sorted;
+    return $sorted->toArray();
 }

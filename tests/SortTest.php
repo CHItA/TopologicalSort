@@ -33,7 +33,7 @@ class SortTest extends TestCase
      */
     public function testArrays($nodes, $edges, $expected)
     {
-        $result = TopologicalSort($nodes, $edges);
+        $result = topologicalSort($nodes, $edges);
         $this->assertEquals($expected, $result);
     }
 
@@ -42,7 +42,7 @@ class SortTest extends TestCase
      */
     public function testReverse($nodes, $edges, $expected)
     {
-        $result = TopologicalSort($nodes, $edges, true);
+        $result = topologicalSort($nodes, $edges, true);
         $this->assertEquals(array_reverse($expected), $result);
     }
 
@@ -56,7 +56,7 @@ class SortTest extends TestCase
             return $edges[$index];
         };
 
-        $result = TopologicalSort($nodes, $callback);
+        $result = topologicalSort($nodes, $callback);
         $this->assertEquals($expected, $result);
     }
 
@@ -70,7 +70,7 @@ class SortTest extends TestCase
             $result[] = $node;
         };
 
-        TopologicalSort($nodes, $edges, false, $callback);
+        topologicalSort($nodes, $edges, false, $callback);
         $this->assertEquals($expected, $result);
     }
 
@@ -85,9 +85,6 @@ class SortTest extends TestCase
             return $node === $skip;
         };
 
-        $index = array_search($skip, $nodes);
-        unset($nodes[$index]);
-        unset($edges[$index]);
         $index = array_search($skip, $expected);
         unset($expected[$index]);
 
@@ -100,7 +97,7 @@ class SortTest extends TestCase
             }
         }
 
-        $result = TopologicalSort($nodes, $edges, false, null, $callback);
+        $result = topologicalSort($nodes, $edges, false, null, $callback);
         $this->assertEquals(array_values($expected), $result);
     }
 
