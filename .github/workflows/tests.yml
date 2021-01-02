@@ -21,7 +21,7 @@ jobs:
           php phpcs.phar --version
       - uses: tinovyatkin/action-php-codesniffer@v1
         with:
-          files: "src/**.php"
+          files: "**.php"
           phpcs_path: php phpcs.phar
           standard: PSR2
 

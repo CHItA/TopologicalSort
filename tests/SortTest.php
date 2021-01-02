@@ -88,11 +88,9 @@ class SortTest extends TestCase
         $index = array_search($skip, $expected);
         unset($expected[$index]);
 
-        foreach ($edges as &$edgesFromNode)
-        {
+        foreach ($edges as &$edgesFromNode) {
             $index = array_search($skip, $edgesFromNode);
-            if ($index !== false)
-            {
+            if ($index !== false) {
                 unset($edgesFromNode[$index]);
             }
         }
