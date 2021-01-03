@@ -10,12 +10,6 @@
         }
     ],
     "minimum-stability": "stable",
-    "autoload": {
-        "psr-4": {
-            "CHItA\\TopologicalSort\\": "src/"
-        },
-        "files": ["src/TopologicalSort.php"]
-    },
     "require": {
         "php": ">=7.1.0"
     },

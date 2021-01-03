@@ -23,7 +23,7 @@ jobs:
           php phpcs.phar --version
       - name: Check coding style
         run: |
-          php phpcs.phar --standard=PSR2 -p src tests
+          php phpcs.phar --standard=PSR2 -p src
 
   unit-tests:
     runs-on: ubuntu-latest

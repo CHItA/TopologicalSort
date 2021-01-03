@@ -26,6 +26,8 @@ namespace CHItA\TopologicalSort\Test;
 use function CHItA\TopologicalSort\topologicalSort;
 use PHPUnit\Framework\TestCase;
 
+require_once __DIR__ . '/../src/TopologicalSort.php';
+
 class SortTest extends TestCase
 {
     /**
