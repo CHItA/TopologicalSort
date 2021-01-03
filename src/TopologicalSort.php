@@ -80,15 +80,15 @@ function topologicalSort(
         );
     }
 
-    if (is_array($edges)) {
+    if (is_callable($edges)) {
+        $edgeIterator = function ($vertex) use (&$edges) {
+            return call_user_func($edges, $vertex);
+        };
+    } elseif (is_array($edges)) {
         $edgeIterator = function ($vertex) use (&$edges) {
             $val = current($edges);
             next($edges);
             return $val;
-        };
-    } elseif (is_callable($edges)) {
-        $edgeIterator = function ($vertex) use (&$edges) {
-            return call_user_func($edges, $vertex);
         };
     } else {
         if (!($edges instanceof IteratorAggregate)
@@ -133,19 +133,47 @@ function topologicalSort(
         }
     }
 
+    if ($flipEdges) {
+        return KahnsAlgorithm(
+            $outgoing_edges,
+            $incoming_edges,
+            $action
+        );
+    }
+
     return KahnsAlgorithm(
-        ($flipEdges) ? $outgoing_edges : $incoming_edges,
-        ($flipEdges) ? $incoming_edges : $outgoing_edges,
+        $incoming_edges,
+        $outgoing_edges,
         $action
     );
 }
 
 /**
- * @param array $incomingEdges
- * @param array $outgoingEdges
- * @param callable|null $action
+ * Kahn's algorithm.
+ *
+ * The function takes the DAG as two lists of directed edges. The arrays must
+ * have the following structure:
+ * ```
+ * $edgeArray = [
+ *  'vertex1' => ['vertexK', ..., 'vertexM'],
+ *  ...
+ *  'vertexN' => [...]
+ * ];
+ * ```
+ * Where `vertexK` and `vertexM` are the vertices `vertex1` has an edge to or
+ * from.
+ *
+ * @param array         $incomingEdges  The edge array containing all edges to
+ *                                      `vertex1` from `vertexK` and `vertexM`.
+ * @param array         $outgoingEdges  The edge array containing all edges from
+ *                                      `vertex1` to `vertexK` and `vertexM`.
+ * @param callable|null $action         Optional callback function which is
+ *                                      called once a node is inserted into the
+ *                                      sorted set.
  *
  * @return array The topologically sorted vertices.
+ *
+ * @throws LogicException When the graph is not acyclic.
  */
 function KahnsAlgorithm(
     array $incomingEdges,
@@ -159,14 +187,11 @@ function KahnsAlgorithm(
 
     $sorted = new SplFixedArray(count($outgoingEdges));
     $vertices_without_incoming_edges = [];
-    array_walk(
-        $incomingEdges,
-        function ($value, $index) use (&$vertices_without_incoming_edges) {
-            if (empty($value)) {
-                $vertices_without_incoming_edges[] = $index;
-            }
+    foreach ($incomingEdges as $vertex => $edges) {
+        if (empty($edges)) {
+            $vertices_without_incoming_edges[] = $vertex;
         }
-    );
+    }
 
     $i = 0;
     while (!empty($vertices_without_incoming_edges)) {
