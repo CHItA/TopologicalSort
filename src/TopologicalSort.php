@@ -78,8 +78,7 @@ trait TopologicalSort
         bool $flipEdges = false,
         ?callable $action = null,
         ?callable $filter = null
-    ): array
-    {
+    ): array {
         if (!is_iterable($edges) && !is_callable($edges)) {
             throw new InvalidArgumentException(
                 'TopologicalSort(): $edges is neither iterable nor callable.'
@@ -140,14 +139,14 @@ trait TopologicalSort
         }
 
         if ($flipEdges) {
-            return $this->KahnsAlgorithm(
+            return $this->kahnsAlgorithm(
                 $outgoing_edges,
                 $incoming_edges,
                 $action
             );
         }
 
-        return $this->KahnsAlgorithm(
+        return $this->kahnsAlgorithm(
             $incoming_edges,
             $outgoing_edges,
             $action
@@ -181,12 +180,11 @@ trait TopologicalSort
      *
      * @throws LogicException When the graph is not acyclic.
      */
-    public function KahnsAlgorithm(
+    public function kahnsAlgorithm(
         array $incomingEdges,
         array $outgoingEdges,
         ?callable $action = null
-    ): array
-    {
+    ): array {
         if ($action === null) {
             $action = function ($node) {
             };
