@@ -23,19 +23,19 @@
 
 namespace CHItA\TopologicalSort\Test;
 
-use function CHItA\TopologicalSort\topologicalSort;
+use CHItA\TopologicalSort\TopologicalSort;
 use PHPUnit\Framework\TestCase;
-
-require_once __DIR__ . '/../src/TopologicalSort.php';
 
 class SortTest extends TestCase
 {
+    use TopologicalSort;
+
     /**
      * @dataProvider getTestData
      */
     public function testArrays($nodes, $edges, $expected)
     {
-        $result = topologicalSort($nodes, $edges);
+        $result = $this->topologicalSort($nodes, $edges);
         $this->assertEquals($expected, $result);
     }
 
@@ -44,7 +44,7 @@ class SortTest extends TestCase
      */
     public function testReverse($nodes, $edges, $expected)
     {
-        $result = topologicalSort($nodes, $edges, true);
+        $result = $this->topologicalSort($nodes, $edges, true);
         $this->assertEquals(array_reverse($expected), $result);
     }
 
@@ -58,7 +58,7 @@ class SortTest extends TestCase
             return $edges[$index];
         };
 
-        $result = topologicalSort($nodes, $callback);
+        $result = $this->topologicalSort($nodes, $callback);
         $this->assertEquals($expected, $result);
     }
 
@@ -72,7 +72,7 @@ class SortTest extends TestCase
             $result[] = $node;
         };
 
-        topologicalSort($nodes, $edges, false, $callback);
+        $this->topologicalSort($nodes, $edges, false, $callback);
         $this->assertEquals($expected, $result);
     }
 
@@ -97,7 +97,7 @@ class SortTest extends TestCase
             }
         }
 
-        $result = topologicalSort($nodes, $edges, false, null, $callback);
+        $result = $this->topologicalSort($nodes, $edges, false, null, $callback);
         $this->assertEquals(array_values($expected), $result);
     }
 
