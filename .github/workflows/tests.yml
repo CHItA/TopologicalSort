@@ -33,9 +33,15 @@ jobs:
       matrix:
         include:
           - php: '7.1'
+            phpunit: '7.5.20'
           - php: '7.2'
+            phpunit: '7.5.20'
           - php: '7.3'
+            phpunit: '7.5.20'
           - php: '7.4'
+            phpunit: '7.5.20'
+          - php: '8.0'
+            phpunit: '8.5.13'
 
     name: PHP ${{ matrix.php }}
     steps:
@@ -47,7 +53,7 @@ jobs:
       - name: PHPUnit tests
         uses: php-actions/phpunit@v2
         with:
-          version: 7.5.20
+          version: ${{ matrix.phpunit }}
           php_version: ${{ matrix.php }}
           configuration: phpunit.dist.xml
           memory_limit: 256M
